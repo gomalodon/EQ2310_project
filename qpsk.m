@@ -34,7 +34,7 @@ else
     d = d + -1;
 end
 if b{2} == 0
-    d = d + j;
+    d = d + 1j;
 else
-    d = d + -j;
+    d = d + -1j;
 end
