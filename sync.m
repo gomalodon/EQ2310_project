@@ -18,6 +18,16 @@ function t_samp = sync(mf, b_train, Q, t_start, t_end)
 %
 % Output:
 %   t_samp = sampling instant for first symbol
-
-
-
+L = t_end - t_start;
+c = b_train(t_start:t_end); 
+max = -1;
+for i=t_start:t_end
+    temp = 0;
+    for k=1:L
+        temp = temp + mf(k*Q + i)' * c(k);
+    end
+    temp = abs(temp);
+    if temp > max 
+        t_samp = i;
+    end
+end

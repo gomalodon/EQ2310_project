@@ -43,6 +43,7 @@ for i=1:n
         else
             d(k) = d(k) + -1j;
         end
+        d(k) = d(k)/norm(d(k));
         k = k + 1;
     end
 end
