@@ -1,7 +1,7 @@
 # EQ2310 Project
 
-### TO COMPLETE:
- - qpsk.m
- - sync.m
- - phase_estimation.m
- - detect.m
+### To complete:
+ - qpsk.m (Giel)
+ - sync.m (Giel)
+ - phase_estimation.m (Jiangfen)
+ - detect.m (Jiangfen)
