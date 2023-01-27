@@ -28,13 +28,13 @@ function d = qpsk(b)
 % Output:
 %   d = complex-valued QPSK symbols
 d = 0;
-if b(0) == 0
-    d += 1;
+if b{1} == 0
+    d = d + 1;
 else
-    d += -1;
+    d = d + -1;
 end
-if b(1) == 0
-    d += j;
+if b{2} == 0
+    d = d + j;
 else
-    d += -j;
+    d = d + -j;
 end
