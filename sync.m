@@ -28,9 +28,7 @@ for i=t_start:t_end
     end
     correlations(i - t_start + 1) = abs(temp);
 end
-% if plot_cor
-%     figure
-%     stem(t_start:t_end,correlations)
-% end
+% figure
+% stem(t_start:t_end,correlations)
 [~,I] = max(correlations);
 t_samp = I + t_start - 1;
