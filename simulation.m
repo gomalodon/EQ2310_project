@@ -23,7 +23,7 @@ Q = 8;                              % Number of samples per symbol in baseband
 plot_complex = true;
 plot_ber = true;
 plot_cor = false;
-window_size = 9;  % Giel: maximum of 54, but around 9 seems to give best results
+window_size = 50;
 
 % Define the pulse-shape used in the transmitter. 
 % Pick one of the pulse shapes below or experiemnt
