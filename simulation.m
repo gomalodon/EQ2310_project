@@ -3,11 +3,12 @@
 % History:
 %   2000-06-28  written /Stefan Parkvall
 %   2001-10-22  modified /George Jongren
-
-clear
+clear;
+close all;
 
 % Initialization
 EbN0_db = 0:10;                     % Eb/N0 values to simulate (in dB)
+% EbN0_db = 10;                     
 nr_bits_per_symbol = 2;             % Corresponds to k in the report
 nr_guard_bits = 10;                 % Size of guard sequence (in nr bits)
                                     % Guard bits are appended to transmitted bits so
@@ -19,11 +20,16 @@ nr_training_bits = 100;             % Size of training sequence (in nr bits)
 nr_blocks = 50;                     % The number of blocks to simulate
 Q = 8;                              % Number of samples per symbol in baseband
 
+plot_complex = true;
+plot_ber = true;
+plot_cor = false;
+window_size = 9;  % Giel: maximum of 54, but around 9 seems to give best results
+
 % Define the pulse-shape used in the transmitter. 
 % Pick one of the pulse shapes below or experiemnt
 % with a pulse of your own.
 pulse_shape = ones(1, Q);
-%pulse_shape = root_raised_cosine(Q);
+% pulse_shape = root_raised_cosine(Q);
 
 % Matched filter impulse response. 
 mf_pulse_shape = fliplr(pulse_shape);
@@ -31,11 +37,14 @@ mf_pulse_shape = fliplr(pulse_shape);
 
 % Loop over different values of Eb/No.
 nr_errors = zeros(1, length(EbN0_db));   % Error counter
+
 for snr_point = 1:length(EbN0_db)
-  
+    if plot_complex
+        figure
+        hold on
+    end
   % Loop over several blocks to get sufficient statistics.
   for blk = 1:nr_blocks
-
     %%%
     %%% Transmitter
     %%%
@@ -54,7 +63,10 @@ for snr_point = 1:length(EbN0_db)
     
     % Map bits into complex-valued QPSK symbols.
     d = qpsk(b);
-
+    if plot_complex
+        plot(d, "rx");
+    end
+  
     % Upsample the signal, apply pulse shaping.
     tx = upfirdn(d, pulse_shape, Q, 1);
 
@@ -66,7 +78,7 @@ for snr_point = 1:length(EbN0_db)
     sigma_sqr = norm(pulse_shape)^2 / nr_bits_per_symbol / 10^(EbN0_db(snr_point)/10);
 
     % Create noise vector.
-    n = sqrt(sigma_sqr/2)*(randn(size(tx))+j*randn(size(tx)));
+    n = sqrt(sigma_sqr/2)*(randn(size(tx))+1j*randn(size(tx)));
 
     % Received signal.
     rx = tx + n;
@@ -83,17 +95,18 @@ for snr_point = 1:length(EbN0_db)
     % parameters. Use sensible values (hint: plot the correlation
     % function used for syncing)! 
     t_start=1+Q*nr_guard_bits/2;
-    t_end=t_start+50;
-    t_samp = sync(mf, b_train, Q, t_start, t_end);
-    
+    t_end=t_start + window_size;
+    t_samp = sync(mf, b_train, Q, t_start, t_end, plot_cor && blk == 50);    
     % Down sampling. t_samp is the first sample, the remaining samples are all
     % separated by a factor of Q. Only training+data samples are kept.
     r = mf(t_samp:Q:t_samp+Q*(nr_training_bits+nr_data_bits)/2-1);
 
     % Phase estimation and correction.
     phihat = phase_estimation(r, b_train);
-    r = r * exp(-j*phihat);
-        
+    r = r * exp(-1j*phihat);
+    if plot_complex
+        plot(r, "b.");
+    end
     % Make decisions. Note that dhat will include training sequence bits
     % as well.
     bhat = detect(r);
@@ -107,10 +120,13 @@ for snr_point = 1:length(EbN0_db)
 
     % Next block.
   end
-
   % Next Eb/No value.
 end
 
 % Compute the BER. 
 BER = nr_errors / nr_data_bits / nr_blocks;
 
+if plot_ber
+    figure
+    loglog(EbN0_db, BER, "b")  
+end
