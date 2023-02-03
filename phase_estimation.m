@@ -13,5 +13,17 @@ function phihat = phase_estimation(r, b_train)
 %
 % Output:
 %   phihat     = estimated phase
-
+phihat = 0;
+qpsk = qpsk(b_train);
+n = r(1:length(qpsk));
+min_g = norm(n-qpsk);
+% Define the range and the step of sequence
+for phase = -pi:0.1:pi:
+    r_sym = n*exp(-1j*phase);
+    min_l = norm(r_sym-qpsk);
+    if min_l < min_g
+        min_g = min_l;
+        phihat = phase;
+    end
+end
 
