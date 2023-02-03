@@ -29,7 +29,6 @@ end
 t_samp = index + t_start - 1;
 
 if plot_cor
-    figure
     stem(t_start:t_end,correlations, "b")
     hold on
     stem(t_samp,top, "r")

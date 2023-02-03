@@ -20,10 +20,11 @@ nr_training_bits = 100;             % Size of training sequence (in nr bits)
 nr_blocks = 50;                     % The number of blocks to simulate
 Q = 8;                              % Number of samples per symbol in baseband
 
+save_plots = false;
 plot_complex = true;
 plot_ber = true;
 plot_cor = false;
-window_size = 50;
+window_size = 15; % Based on the correlation plots in sync, 15 seems best
 
 % Define the pulse-shape used in the transmitter. 
 % Pick one of the pulse shapes below or experiemnt
@@ -40,7 +41,7 @@ nr_errors = zeros(1, length(EbN0_db));   % Error counter
 
 for snr_point = 1:length(EbN0_db)
     if plot_complex
-        figure
+        figure(100 + snr_point)
         hold on
     end
   % Loop over several blocks to get sufficient statistics.
@@ -127,6 +128,19 @@ end
 BER = nr_errors / nr_data_bits / nr_blocks;
 
 if plot_ber
-    figure
-    loglog(EbN0_db, BER, "b")  
+    figure(1)
+    loglog(EbN0_db, BER, "b")
+end
+
+if save_plots
+    if plot_ber
+        figure(1)
+        saveas(gcf, "./images/BER.png");
+    end
+    if plot_complex
+        for i=1:snr_point(end)
+            figure(100 + i)
+            saveas(gcf, sprintf("./images/complex_SNR_%d.png", i));
+        end
+    end
 end
