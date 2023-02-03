@@ -155,7 +155,7 @@ if plot_psd
 end
 
 if plot_eye
-    eyediagram(r,4);
+    eyediagram(r,2);
     if save_plots
         saveas(gcf, "./images/eye.png");
     end

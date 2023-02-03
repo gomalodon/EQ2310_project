@@ -184,11 +184,11 @@ if plot_ber
 end
 
 if plot_eye
-    eyediagram(r,4);
+    eyediagram(r,2);
     if save_plots
         saveas(gcf, "./images/eye.png");
     end
-    eyediagram(r_2_path,4);
+    eyediagram(r_2_path,2);
     if save_plots
         saveas(gcf, "./images/eye_2_path.png");
     end
