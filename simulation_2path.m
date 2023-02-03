@@ -7,10 +7,8 @@ clear;
 close all;
 
 save_plots = true;
-plot_complex = false;
-plot_ber = false;
-plot_psd = true;
-plot_eye = false;
+plot_ber = true;
+plot_eye = true;
 plot_cor = false;
 window_size = 15; % Based on the correlation plots in sync, 15 seems best
 
@@ -41,16 +39,9 @@ mf_pulse_shape = fliplr(pulse_shape);
 
 % Loop over different values of Eb/No.
 nr_errors = zeros(1, length(EbN0_db));   % Error counter
+nr_errors_2_path = zeros(1, length(EbN0_db));
 
 for snr_point = 1:length(EbN0_db)
-    if plot_complex
-        figure(100 + snr_point)
-        xlabel("Re")
-        ylabel("Im")
-        yline(0);
-        xline(0);
-        hold on
-    end
   % Loop over several blocks to get sufficient statistics.
   for blk = 1:nr_blocks
     %%%
@@ -109,9 +100,7 @@ for snr_point = 1:length(EbN0_db)
     % Phase estimation and correction.
     phihat = phase_estimation(r, b_train);
     r = r * exp(-1j*phihat);
-    if plot_complex
-        plot(r, "b.");
-    end
+
     % Make decisions. Note that dhat will include training sequence bits
     % as well.
     bhat = detect(r);
@@ -123,6 +112,54 @@ for snr_point = 1:length(EbN0_db)
     temp=bhat(1+nr_training_bits:nr_training_bits+nr_data_bits) ~= b_data;
     nr_errors(snr_point) = nr_errors(snr_point) + sum(temp);
 
+
+
+    %%%% ISI 2 Path
+
+    tx_2_path = multipath(tx,8);
+    
+    % Compute variance of complex noise according to report.
+    sigma_sqr_2_path = norm(pulse_shape)^2 / nr_bits_per_symbol / 10^(EbN0_db(snr_point)/10);
+    
+    % Create noise vector.
+    n_2_path = sqrt(sigma_sqr_2_path/2)*(randn(size(tx_2_path))+1j*randn(size(tx_2_path)));
+
+    % Received signal.
+    rx_2_path = tx_2_path + n_2_path;
+
+    %%%
+    %%% Receiver
+    %%%
+    
+    % Matched filtering.
+    mf_2_path = conv(mf_pulse_shape,rx_2_path);
+    
+    % Synchronization. The position and size of the search window
+    % is here set arbitrarily. Note that you might need to change these
+    % parameters. Use sensible values (hint: plot the correlation
+    % function used for syncing)! 
+    t_start_2_path = 1+Q*nr_guard_bits/2;
+    t_end_2_path = t_start_2_path + window_size;
+    t_samp_2_path = sync(mf_2_path, b_train, Q, t_start_2_path, t_end_2_path, plot_cor && blk == 50);    
+    % Down sampling. t_samp is the first sample, the remaining samples are all
+    % separated by a factor of Q. Only training+data samples are kept.
+    r_2_path = mf_2_path(t_samp_2_path:Q:t_samp_2_path+Q*(nr_training_bits+nr_data_bits)/2-1);
+
+    % Phase estimation and correction.
+    phihat_2_path = phase_estimation(r_2_path, b_train);
+    r_2_path = r_2_path * exp(-1j*phihat_2_path);
+
+    % Make decisions. Note that dhat will include training sequence bits
+    % as well.
+    bhat_2_path = detect(r_2_path);
+    
+    % Count errors. Note that only the data bits and not the training bits
+    % are included in the comparison. The last data bits are missing as well
+    % since the whole impulse response due to the last symbol is not
+    % included in the simulation program above.
+    temp_2_path = bhat_2_path(1+nr_training_bits:nr_training_bits+nr_data_bits) ~= b_data;
+    nr_errors_2_path(snr_point) = nr_errors_2_path(snr_point) + sum(temp_2_path);
+
     % Next block.
   end
   % Next Eb/No value.
@@ -130,28 +167,20 @@ end
 
 % Compute the BER. 
 BER = nr_errors / nr_data_bits / nr_blocks;
+BER_2_path = nr_errors_2_path / nr_data_bits / nr_blocks;
 
 if plot_ber
     figure
     semilogy(EbN0_db, BER, "b")
     hold on
-    EbN0 = 10.^(EbN0_db/10);
-    semilogy(EbN0_db, qfunc(sqrt(2*EbN0)), 'r')
-    legend("Simulation BER", "Theoretical BER")
+    semilogy(EbN0_db, BER_2_path, "r")
+    legend("AWGN", "2 Path")
     xlabel('Eb/N0');
     ylabel('Pe');
     if save_plots
-        saveas(gcf, "./images/BER.png");
+        saveas(gcf, "./images/BER_2_path.png");
     end
 
-end
-
-if plot_psd
-    figure
-    periodogram(tx)
-    if save_plots
-        saveas(gcf, "./images/psd.png");
-    end
 end
 
 if plot_eye
@@ -159,14 +188,9 @@ if plot_eye
     if save_plots
         saveas(gcf, "./images/eye.png");
     end
-end
-
-if save_plots
-    if plot_complex
-        for i=1:snr_point(end)
-            figure(100 + i)
-            saveas(gcf, sprintf("./images/complex_SNR_%d.png", i));
-        end
+    eyediagram(r_2_path,4);
+    if save_plots
+        saveas(gcf, "./images/eye_2_path.png");
     end
-    
+   
 end
