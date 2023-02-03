@@ -6,12 +6,11 @@
 clear;
 close all;
 
-save_plots = true;
-plot_complex = false;
-plot_ber = false;
+save_plots = false;
+plot_complex = true;
+plot_ber = true;
 plot_psd = true;
-plot_eye = false;
-plot_cor = false;
+plot_eye = true;
 window_size = 15; % Based on the correlation plots in sync, 15 seems best
 
 
@@ -101,7 +100,7 @@ for snr_point = 1:length(EbN0_db)
     % function used for syncing)! 
     t_start=1+Q*nr_guard_bits/2;
     t_end=t_start + window_size;
-    t_samp = sync(mf, b_train, Q, t_start, t_end, plot_cor && blk == 50);    
+    t_samp = sync(mf, b_train, Q, t_start, t_end);    
     % Down sampling. t_samp is the first sample, the remaining samples are all
     % separated by a factor of Q. Only training+data samples are kept.
     r = mf(t_samp:Q:t_samp+Q*(nr_training_bits+nr_data_bits)/2-1);

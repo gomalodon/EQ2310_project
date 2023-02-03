@@ -1,4 +1,4 @@
-function t_samp = sync(mf, b_train, Q, t_start, t_end, plot_cor)
+function t_samp = sync(mf, b_train, Q, t_start, t_end)
 % t_samp = sync(mf, b_train, Q, t_start, t_end)
 %
 % Determines when to sample the matched filter outputs. The synchronization
@@ -28,7 +28,7 @@ end
 [top,index] = max(correlations);
 t_samp = index + t_start - 1;
 
-if plot_cor
+if false
     stem(t_start:t_end,correlations, "b")
     hold on
     stem(t_samp,top, "r")

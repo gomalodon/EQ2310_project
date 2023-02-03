@@ -7,9 +7,6 @@ clear;
 close all;
 
 save_plots = true;
-plot_ber = true;
-plot_eye = true;
-plot_cor = false;
 window_size = 15; % Based on the correlation plots in sync, 15 seems best
 
 
@@ -40,6 +37,12 @@ mf_pulse_shape = fliplr(pulse_shape);
 % Loop over different values of Eb/No.
 nr_errors = zeros(1, length(EbN0_db));   % Error counter
 nr_errors_2_path = zeros(1, length(EbN0_db));
+
+tsamp_list = zeros(1, length(EbN0_db));
+phihat_list = zeros(1, length(EbN0_db));
+
+tsamp_list_2_path = zeros(1, length(EbN0_db));
+phihat_list_2_path = zeros(1, length(EbN0_db));
 
 for snr_point = 1:length(EbN0_db)
   % Loop over several blocks to get sufficient statistics.
@@ -92,13 +95,17 @@ for snr_point = 1:length(EbN0_db)
     % function used for syncing)! 
     t_start=1+Q*nr_guard_bits/2;
     t_end=t_start + window_size;
-    t_samp = sync(mf, b_train, Q, t_start, t_end, plot_cor && blk == 50);    
+    t_samp = sync(mf, b_train, Q, t_start, t_end);    
+    tsamp_list(snr_point) = t_samp;
+
     % Down sampling. t_samp is the first sample, the remaining samples are all
     % separated by a factor of Q. Only training+data samples are kept.
     r = mf(t_samp:Q:t_samp+Q*(nr_training_bits+nr_data_bits)/2-1);
 
     % Phase estimation and correction.
     phihat = phase_estimation(r, b_train);
+    phihat_list(snr_point) = phihat;
+
     r = r * exp(-1j*phihat);
 
     % Make decisions. Note that dhat will include training sequence bits
@@ -140,13 +147,16 @@ for snr_point = 1:length(EbN0_db)
     % function used for syncing)! 
     t_start_2_path = 1+Q*nr_guard_bits/2;
     t_end_2_path = t_start_2_path + window_size;
-    t_samp_2_path = sync(mf_2_path, b_train, Q, t_start_2_path, t_end_2_path, plot_cor && blk == 50);    
+    t_samp_2_path = sync(mf_2_path, b_train, Q, t_start_2_path, t_end_2_path);    
+    tsamp_list_2_path(snr_point) = t_samp_2_path;
+    
     % Down sampling. t_samp is the first sample, the remaining samples are all
     % separated by a factor of Q. Only training+data samples are kept.
     r_2_path = mf_2_path(t_samp_2_path:Q:t_samp_2_path+Q*(nr_training_bits+nr_data_bits)/2-1);
 
     % Phase estimation and correction.
     phihat_2_path = phase_estimation(r_2_path, b_train);
+    phihat_list_2_path(snr_point) = phihat_2_path;
     r_2_path = r_2_path * exp(-1j*phihat_2_path);
 
     % Make decisions. Note that dhat will include training sequence bits
@@ -169,28 +179,44 @@ end
 BER = nr_errors / nr_data_bits / nr_blocks;
 BER_2_path = nr_errors_2_path / nr_data_bits / nr_blocks;
 
-if plot_ber
-    figure
-    semilogy(EbN0_db, BER, "b")
-    hold on
-    semilogy(EbN0_db, BER_2_path, "r")
-    legend("AWGN", "2 Path")
-    xlabel('Eb/N0');
-    ylabel('Pe');
-    if save_plots
-        saveas(gcf, "./images/BER_2_path.png");
-    end
-
+figure
+semilogy(EbN0_db, BER, "b")
+hold on
+semilogy(EbN0_db, BER_2_path, "r")
+legend("AWGN", "2 Path")
+xlabel('Eb/N0');
+ylabel('Pe');
+if save_plots
+    saveas(gcf, "./images/BER_2_path.png");
 end
 
-if plot_eye
-    eyediagram(r,2);
-    if save_plots
-        saveas(gcf, "./images/eye.png");
-    end
-    eyediagram(r_2_path,2);
-    if save_plots
-        saveas(gcf, "./images/eye_2_path.png");
-    end
-   
+figure
+plot(EbN0_db, phihat_list, 'b');
+hold on
+plot(EbN0_db, phihat_list_2_path, 'r');
+legend('AWGN channel','two-path ISI channel');
+xlabel("Eb/N0")
+ylabel("phihat [rad]")
+if save_plots
+    saveas(gcf, "./images/phase_2_path.png");
+end
+
+figure
+plot(EbN0_db, tsamp_list, 'b');
+hold on
+plot(EbN0_db, tsamp_list_2_path,'r');
+xlabel("Eb/N0")
+ylabel("t_samp [t]")
+legend('AWGN channel','two-path ISI channel');
+if save_plots
+    saveas(gcf, "./images/tsamp_2_path.png");
+end
+
+eyediagram(r,2);
+if save_plots
+    saveas(gcf, "./images/eye.png");
+end
+eyediagram(r_2_path,2);
+if save_plots
+    saveas(gcf, "./images/eye_2_path.png");
 end
