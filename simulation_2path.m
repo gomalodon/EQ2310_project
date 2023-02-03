@@ -206,7 +206,7 @@ plot(EbN0_db, tsamp_list, 'b');
 hold on
 plot(EbN0_db, tsamp_list_2_path,'r');
 xlabel("Eb/N0")
-ylabel("t_samp [t]")
+ylabel("t\_samp [t]")
 legend('AWGN channel','two-path ISI channel');
 if save_plots
     saveas(gcf, "./images/tsamp_2_path.png");
