@@ -1,7 +1,10 @@
 # EQ2310 Project
 
-### To complete:
- - qpsk.m : probably works correctly
- - sync.m : not sure if it works correctly
- - phase_estimation.m : not done
- - detect.m : probably works correctly
+### Requested functions:
+ - qpsk.m
+ - sync.m
+ - phase_estimation.m
+ - detect.m
+### Additional files:
+ - simulation_2path.m -> for the channel comparison
+ - simulation_training_length.m -> for the optimal training bits length
